@@ -1,10 +1,9 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
-	"time"
 	"web/internal/handler"
+	mw "web/internal/middleware"
 	"web/internal/repository"
 	"web/internal/service"
 
@@ -49,7 +48,7 @@ type ServerChi struct {
 }
 
 // Run is a method that runs the application
-func (a *ServerChi) Run(api string) (err error) {
+func (a *ServerChi) Run(apiToken string) (err error) {
 	// - repository
 	pr, err := repository.NewProductRepository(a.loaderFilePath)
 	if err != nil {
@@ -67,7 +66,7 @@ func (a *ServerChi) Run(api string) (err error) {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Use(LoggingMiddleware)
+	r.Use(mw.LoggingMiddleware)
 
 	// - endpoints
 
@@ -91,10 +90,10 @@ func (a *ServerChi) Run(api string) (err error) {
 		})
 		//Private endpoints
 		r.Group(func(r chi.Router) {
-			r.Use(Auth(api))
+			// r.Use(Auth)
 			r.Post("/", ph.CreateProduct)
 
-			r.Put("/{id}", ph.UpdateCreate)
+			r.With(mw.Auth(apiToken)).Put("/{id}", ph.UpdateCreate)
 
 			r.Patch("/{id}", ph.Patch)
 
@@ -106,29 +105,4 @@ func (a *ServerChi) Run(api string) (err error) {
 	// run server
 	err = http.ListenAndServe(a.serverAddress, r)
 	return
-}
-
-func LoggingMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		fmt.Println("Request URI: ", r.RequestURI+" "+r.Method, "Resquest recieved at: ", time.Now().Format("2006-01-02 15:04:05"))
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func Auth(apiToken string) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-			token := r.Header.Get("Authorization")
-			if token != apiToken {
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Unauthorized"))
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		})
-	}
 }
