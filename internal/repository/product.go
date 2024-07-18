@@ -1,4 +1,4 @@
-package product
+package repository
 
 import (
 	"encoding/json"
@@ -13,6 +13,9 @@ type ProductRepository interface {
 	GetProductByID(id int) (domain.Product, error)
 	// SearchProduct(priceGt float64) ([]domain.Product, error)
 	CreateProduct(product domain.Product) error
+	DeleteProduct(id int) error
+	UpdateProduct(int, domain.Product) error
+	PatchProduct(int, domain.Product) error
 }
 
 // productRepository is a concrete implementation of ProductRepository
@@ -83,4 +86,42 @@ func (pr *productRepository) getNextID() int {
 		}
 	}
 	return maxID + 1
+}
+
+func (pr *productRepository) DeleteProduct(id int) error {
+	for i, product := range pr.products {
+		if product.ID == id {
+			pr.products = append(pr.products[:i], pr.products[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("product not found")
+}
+
+func (pr *productRepository) UpdateProduct(id int, product domain.Product) error {
+	for i, p := range pr.products {
+		if p.ID == id {
+			pr.products[i] = product
+			return nil
+		}
+	}
+	return fmt.Errorf("product not found")
+}
+
+func (pr *productRepository) PatchProduct(id int, product domain.Product) error {
+	for i, p := range pr.products {
+		if p.ID == id {
+			if product.Name != "" {
+				pr.products[i].Name = product.Name
+			}
+			if product.Price != 0 {
+				pr.products[i].Price = product.Price
+			}
+			if product.Quantity != 0 {
+				pr.products[i].Quantity = product.Quantity
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("product not found")
 }

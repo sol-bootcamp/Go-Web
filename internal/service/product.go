@@ -1,25 +1,29 @@
-package product
+package service
 
 import (
 	"fmt"
 	"web/internal/domain"
+	"web/internal/repository"
 )
 
 // ProductService is the interface that provides product methods
 type ProductService interface {
 	GetAllProducts() ([]domain.Product, error)
-	GetProductByID(id int) (domain.Product, error)
-	SearchProduct(priceGt float64) ([]domain.Product, error)
-	CreateProduct(product domain.Product) error
+	GetProductByID(int) (domain.Product, error)
+	SearchProduct(float64) ([]domain.Product, error)
+	CreateProduct(domain.Product) error
+	DeleteProduct(int) error
+	UpdateProduct(int, domain.Product) error
+	PatchProduct(int, domain.Product) error
 }
 
 // productService is a concrete implementation of ProductService
 type productService struct {
-	repository ProductRepository
+	repository repository.ProductRepository
 }
 
 // NewProductService creates a new ProductService with the necessary dependencies
-func NewProductService(repository ProductRepository) ProductService {
+func NewProductService(repository repository.ProductRepository) ProductService {
 	return &productService{
 		repository: repository,
 	}
@@ -58,4 +62,16 @@ func (ps *productService) SearchProduct(priceGt float64) ([]domain.Product, erro
 
 func (ps *productService) CreateProduct(product domain.Product) error {
 	return ps.repository.CreateProduct(product)
+}
+
+func (ps *productService) DeleteProduct(id int) error {
+	return ps.repository.DeleteProduct(id)
+}
+
+func (ps *productService) UpdateProduct(id int, product domain.Product) error {
+	return ps.repository.UpdateProduct(id, product)
+}
+
+func (ps *productService) PatchProduct(id int, product domain.Product) error {
+	return ps.repository.PatchProduct(id, product)
 }
